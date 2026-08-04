@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intelliquiz - AI Multi-File RAG & Quiz Generator</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <!-- Markdown Renderer -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+  <!-- Ambient Moving Glass Background -->
+  <div class="bg-glass-orb orb-1"></div>
+  <div class="bg-glass-orb orb-2"></div>
+  <div class="bg-glass-orb orb-3"></div>
+
+  <div class="app-container">
+    
+    <!-- App Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">🧠</div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h1 class="brand-title">INTELLIQUIZ</h1>
+            <span class="brand-badge">RAG v2.0</span>
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); font-weight: 600;">Multi-Document AI Analysis & Quiz Generator</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="status-badge" id="statusBadge">
+          <span class="status-dot"></span>
+          <span id="statusText">Ollama Ready</span>
+        </div>
+
+        <select id="modelSelect" class="model-select">
+          <option value="mistral:latest">mistral:latest</option>
+          <option value="llama3.1:latest">llama3.1:latest</option>
+          <option value="llama3:latest">llama3:latest</option>
+        </select>
+
+        <button class="btn btn-danger" onclick="clearWorkspace()" style="padding: 8px 14px; font-size: 12px;">
+          🗑️ Clear
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Grid -->
+    <div class="main-layout">
+      
+      <!-- Sidebar Document Manager -->
+      <aside class="sidebar-panel">
+        <div class="panel-title">
+          <span>📁 Document Hub</span>
+          <span id="docCountBadge" style="background: var(--accent-yellow); color: #000; font-size: 11px; padding: 2px 8px; border-radius: 12px; border: 2px solid #000;">0 Files</span>
+        </div>
+
+        <!-- Drag & Drop Zone -->
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+          <div class="drop-icon">📤</div>
+          <div class="drop-text">Drag & Drop Files Here</div>
+          <div class="drop-subtext">Supports PPTX, PDF, DOCX, TXT</div>
+          <input type="file" id="fileInput" multiple accept=".pptx,.ppt,.pdf,.docx,.doc,.txt,.md">
+        </div>
+
+        <!-- Selected File List -->
+        <div class="file-list" id="fileList">
+          <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 10px 0;">
+            No documents indexed yet. Upload PPTs or PDFs above!
+          </div>
+        </div>
+
+        <!-- Upload & Process Button -->
+        <button class="btn btn-primary" id="uploadBtn" onclick="uploadFiles()" style="width: 100%;">
+          ⚡ Index Documents
+        </button>
+      </aside>
+
+      <!-- Content Area with Tabs -->
+      <main class="content-panel">
+        
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+          <button class="tab-btn active" onclick="switchTab('chatTab', this)">
+            💬 RAG AI Chat
+          </button>
+          <button class="tab-btn" onclick="switchTab('quizTab', this)">
+            ⚡ Intelliquiz Mode
+          </button>
+          <button class="tab-btn" onclick="switchTab('summaryTab', this)">
+            📝 Document Summaries
+          </button>
+        </nav>
+
+        <!-- Tab 1: RAG AI Chat -->
+        <section class="tab-content active" id="chatTab">
+          <!-- Quick Prompts -->
+          <div class="quick-prompts">
+            <div class="prompt-chip" onclick="useQuickPrompt('Summarize key concepts from the uploaded slides.')">✨ Summarize slides</div>
+            <div class="prompt-chip" onclick="useQuickPrompt('What are the main definitions and formulas explained?')">📐 Definitions & Formulas</div>
+            <div class="prompt-chip" onclick="useQuickPrompt('Compare the topics discussed in the documents.')">⚖️ Compare topics</div>
+          </div>
+
+          <div class="chat-container">
+            <div class="chat-history" id="chatHistory">
+              <!-- Welcome Bot Message -->
+              <div class="chat-message bot">
+                <div class="avatar bot">🤖</div>
+                <div class="message-bubble">
+                  <strong>Welcome to Intelliquiz RAG!</strong><br>
+                  Upload your PPT presentations, PDFs, or lecture notes on the left sidebar to start analyzing. I can answer questions with exact page & slide citations and generate interactive practice quizzes!
+                </div>
+              </div>
+            </div>
+
+            <!-- Chat Input Bar -->
+            <div class="chat-input-bar">
+              <input type="text" id="chatInput" class="chat-input" placeholder="Ask anything about your uploaded documents..." onkeypress="handleKeyPress(event)">
+              <button class="btn btn-secondary" onclick="sendQuery()">
+                Send 🚀
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tab 2: Intelliquiz MCQ Generator -->
+        <section class="tab-content" id="quizTab">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <div>
+              <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px;">⚡ MCQ Quiz Generator</h2>
+              <p style="font-size: 13px; color: var(--text-muted);">Generate interactive practice questions directly from your indexed lecture notes and PPTs.</p>
+            </div>
+            
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <label style="font-size: 13px; font-weight: 700;">Questions:</label>
+              <select id="quizNumSelect" class="model-select" style="padding: 6px 12px;">
+                <option value="3">3 MCQs</option>
+                <option value="5" selected>5 MCQs</option>
+                <option value="10">10 MCQs</option>
+              </select>
+              <button class="btn btn-primary" onclick="generateQuiz()">
+                🎲 Generate Quiz
+              </button>
+            </div>
+          </div>
+
+          <div class="quiz-container" id="quizContainer">
+            <div style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+              Click <strong>Generate Quiz</strong> to build interactive MCQs from your documents!
+            </div>
+          </div>
+        </section>
+
+        <!-- Tab 3: Document Summaries -->
+        <section class="tab-content" id="summaryTab">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <div>
+              <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px;">📝 Document Key Takeaways</h2>
+              <p style="font-size: 13px; color: var(--text-muted);">AI-generated bullet-point summaries for every uploaded presentation & document.</p>
+            </div>
+            <button class="btn btn-secondary" onclick="fetchSummaries()">
+              🔄 Refresh Summaries
+            </button>
+          </div>
+
+          <div id="summaryContainer" style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+              Upload documents and click <strong>Refresh Summaries</strong> to view key takeaways.
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
