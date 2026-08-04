@@ -37,7 +37,7 @@
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/SurajMadhavarapu/Intelliquiz.git
+   git clone https://github.com/manireddy2920/Intelliquiz.git
    cd Intelliquiz
    ```
 
